@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racketlon-Masters | Turnierplan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Vue.js für die interaktive Logik -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Entfernt Pfeile bei Nummer-Inputs */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .print-break { page-break-before: always; }
+            body { background-color: white; }
+            .shadow-lg, .shadow-md { box-shadow: none !important; border: 1px solid #e5e7eb; }
+            input { border: none !important; background: transparent !important; padding: 0 !important; width: 30px !important;}
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-4 md:p-8">
+
+    <div id="app" class="max-w-6xl mx-auto" v-cloak>
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-6 md:p-10 mb-8 shadow-xl relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">Racketlon Masters 🏆</h1>
+                    <p class="text-slate-300 text-lg md:text-xl">Klasse vs. Lehrkräfte | Interaktiver Spielplan</p>
+                </div>
+                <button onclick="window.print()" class="no-print bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold shadow hover:bg-slate-100 transition flex items-center gap-2">
+                    <i data-lucide="printer" class="w-5 h-5"></i> Drucken / PDF
+                </button>
+            </div>
+            <div class="absolute -right-10 -top-10 opacity-10">
+                <i data-lucide="trophy" class="w-64 h-64"></i>
+            </div>
+        </header>
+
+        <!-- Rules Section -->
+        <section class="bg-white rounded-2xl p-6 shadow-md mb-8 border-l-4 border-yellow-400 no-print">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="alert-circle" class="text-yellow-500"></i> Turnier-App Info
+            </h2>
+            <p class="text-slate-600">Trage einfach die Punkte für Badminton und Squash in die entsprechenden Felder ein. Die App berechnet automatisch die Gesamtsiege (3 Punkte für Sieg, 1 Punkt für Unentschieden), erstellt die Gruppentabellen und befüllt den Finalbaum am Ende der Seite!</p>
+        </section>
+
+        <!-- Groups Section -->
+        <h2 class="text-3xl font-bold mb-6 flex items-center gap-2">
+            <i data-lucide="users" class="text-slate-600"></i> Gruppeneinteilung
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div v-for="(group, groupName) in teamsByGroup" :key="groupName" class="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-slate-700">
+                <div class="bg-slate-100 py-3 text-center border-b font-bold text-lg">GRUPPE {{ groupName }}</div>
+                <ul class="p-4 space-y-3">
+                    <li v-for="team in group" :key="team.id" class="flex items-center gap-2">
+                        <span :class="team.id === 'B4' ? 'bg-yellow-200' : 'bg-slate-200'" class="text-xs font-bold px-2 py-1 rounded">{{ team.id }}</span> 
+                        {{ team.name }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="print-break"></div>
+
+        <!-- Block 1 -->
+        <h2 class="text-3xl font-bold mb-6 flex items-center gap-2 mt-8">
+            <i data-lucide="calendar-clock" class="text-slate-600"></i> Zeitplan: BLOCK 1 (10:30 - 11:10)
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Badminton Block 1 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-blue-200">
+                <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold flex items-center gap-2">🏸 Badminton-Halle</h3>
+                    <span class="bg-blue-800 px-3 py-1 rounded-full text-sm font-semibold">Gruppen A & B</span>
+                </div>
+                <div class="p-2 md:p-4">
+                    <table class="w-full text-left text-sm md:text-base">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2">Runde 1 (10:30)</td></tr>
+                            <tr v-for="match in block1Badm.r1" class="hover:bg-slate-50">
+                                <td class="py-2 w-16 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2 mt-2">Runde 2 (10:42)</td></tr>
+                            <tr v-for="match in block1Badm.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2 mt-2">Runde 3 (10:54)</td></tr>
+                            <tr v-for="match in block1Badm.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2 mt-2">Runde 2 (10:42)</td></tr>
+                            <tr v-for="match in block1Badm.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2 mt-2">Runde 3 (10:54)</td></tr>
+                            <tr v-for="match in block1Badm.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Squash Block 1 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-orange-200">
+                <div class="bg-orange-500 text-white p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold flex items-center gap-2">🎾 Squash-Halle</h3>
+                    <span class="bg-orange-700 px-3 py-1 rounded-full text-sm font-semibold">Gruppen C & D</span>
+                </div>
+                <div class="p-2 md:p-4">
+                    <table class="w-full text-left text-sm md:text-base">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2">Runde 1 (10:30)</td></tr>
+                            <tr v-for="match in block1Squash.r1" class="hover:bg-slate-50">
+                                <td class="py-2 w-16 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 2 (10:42)</td></tr>
+                            <tr v-for="match in block1Squash.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 3 (10:54)</td></tr>
+                            <tr v-for="match in block1Squash.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 2 (10:42)</td></tr>
+                            <tr v-for="match in block1Squash.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 3 (10:54)</td></tr>
+                            <tr v-for="match in block1Squash.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Switch -->
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl p-6 text-center shadow-lg my-10 flex flex-col items-center">
+            <i data-lucide="arrow-right-left" class="w-12 h-12 mb-3"></i>
+            <h2 class="text-2xl font-bold mb-1">11:05 - 11:15 Uhr: DER GROSSE HALLENWECHSEL</h2>
+            <p class="text-indigo-100">Gruppen A & B gehen zum Squash. Gruppen C & D gehen zum Badminton.</p>
+        </div>
+
+        <div class="print-break"></div>
+
+        <!-- Block 2 -->
+        <h2 class="text-3xl font-bold mb-6 flex items-center gap-2 mt-8">
+            <i data-lucide="calendar-clock" class="text-slate-600"></i> Zeitplan: BLOCK 2 (11:15 - 12:05)
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Squash Block 2 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-orange-200">
+                <div class="bg-orange-500 text-white p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold flex items-center gap-2">🎾 Squash-Halle</h3>
+                    <span class="bg-orange-700 px-3 py-1 rounded-full text-sm font-semibold">Gruppen A & B</span>
+                </div>
+                <div class="p-2 md:p-4">
+                    <table class="w-full text-left text-sm md:text-base">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2">Runde 4 (11:15)</td></tr>
+                            <tr v-for="match in block1Badm.r1" class="hover:bg-slate-50">
+                                <td class="py-2 w-16 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 5 (11:27)</td></tr>
+                            <tr v-for="match in block1Badm.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 6 (11:39)</td></tr>
+                            <tr v-for="match in block1Badm.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 5 (11:27)</td></tr>
+                            <tr v-for="match in block1Badm.r2" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                            <tr><td colspan="3" class="py-2 font-bold text-orange-600 bg-orange-50/50 px-2 mt-2">Runde 6 (11:39)</td></tr>
+                            <tr v-for="match in block1Badm.r3" class="hover:bg-slate-50">
+                                <td class="py-2 text-xs text-slate-500">{{ match.c }}</td>
+                                <td><strong>{{ match.t1 }}</strong> vs <strong>{{ match.t2 }}</strong></td>
+                                <td class="text-right flex justify-end gap-1 items-center">
+                                    <input v-model.number="scores[match.id].s1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none"> :
+                                    <input v-model.number="scores[match.id].s2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-orange-400 outline-none">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Badminton Block 2 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-blue-200 relative">
+                <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold flex items-center gap-2">🏸 Badminton-Halle</h3>
+                    <span class="bg-blue-800 px-3 py-1 rounded-full text-sm font-semibold">Gruppen C & D</span>
+                </div>
+                <div class="bg-yellow-100 text-yellow-800 p-2 text-xs font-bold text-center border-b border-yellow-200">
+                    Achtung: Nur 3 Courts! Teams haben versetzt Pause.
+                </div>
+                <div class="p-2 md:p-4">
+                    <table class="w-full text-left text-sm md:text-base">
+                        <tbody class="divide-y divide-slate-100">
+                            <!-- Helper template loop to render complex Block 2 Badminton logic -->
+                            <template v-for="(round, idx) in block2Badm" :key="idx">
+                                <tr><td colspan="3" class="py-2 font-bold text-blue-600 bg-blue-50/50 px-2" :class="{'mt-2': idx>0}">Runde {{idx + 4}} ({{round.time}})</td></tr>
+                                <tr v-for="match in round.matches" class="hover:bg-slate-50">
+                                    <td class="py-2 w-16 text-xs text-slate-500">{{ match.c }}</td>
+                                    <td><strong>{{ match.t1 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t1] }})</span> vs <strong>{{ match.t2 }}</strong> <span class="text-xs text-slate-500">({{ teams[match.t2] }})</span></td>
+                                    <td class="text-right flex justify-end gap-1 items-center">
+                                        <input v-model.number="scores[match.id].b1" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none"> :
+                                        <input v-model.number="scores[match.id].b2" type="number" class="w-10 h-8 text-center border rounded bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none">
+                                    </td>
+                                </tr>
+                                <tr class="bg-slate-100 text-slate-500 text-xs md:text-sm">
+                                    <td class="py-1">PAUSE</td>
+                                    <td colspan="2">{{round.pause}}</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIVE STANDINGS -->
+        <h2 class="text-3xl font-bold mb-6 flex items-center gap-2 mt-12 text-slate-800">
+            <i data-lucide="bar-chart-2" class="text-blue-600"></i> Live Tabellen
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+            <div v-for="(group, name) in standings" :key="name" class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+                <div class="bg-slate-800 text-white text-center py-2 font-bold">Gruppe {{name}}</div>
+                <table class="w-full text-sm text-center">
+                    <thead class="bg-slate-50 text-slate-500 border-b">
+                        <tr>
+                            <th class="py-2 pl-2 text-left w-6">#</th>
+                            <th class="py-2 text-left">Team</th>
+                            <th class="py-2" title="Gespielte Matches">Sp</th>
+                            <th class="py-2" title="Punkte (3 für Sieg, 1 für Unentschieden)">Pkt</th>
+                            <th class="py-2 pr-2" title="Punktedifferenz">Diff</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr v-for="(team, index) in group" :key="team.id" :class="{'bg-yellow-50': index === 0}">
+                            <td class="py-2 pl-2 text-left font-bold" :class="{'text-yellow-600': index === 0}">{{index + 1}}</td>
+                            <td class="py-2 text-left font-medium truncate max-w-[100px]">{{team.name}}</td>
+                            <td class="py-2 text-slate-500">{{team.played}}</td>
+                            <td class="py-2 font-bold">{{team.points}}</td>
+                            <td class="py-2 pr-2" :class="team.diff > 0 ? 'text-green-600' : (team.diff < 0 ? 'text-red-500' : '')">{{team.diff > 0 ? '+' : ''}}{{team.diff}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="print-break"></div>
+
+        <!-- The Final Phase -->
+        <div class="bg-slate-800 text-white rounded-2xl p-6 md:p-10 mb-8 shadow-xl">
+            <h2 class="text-2xl md:text-3xl font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                <i data-lucide="crown" class="w-8 h-8"></i> Die Platzierungsspiele (12:15 - 13:00)
+            </h2>
+            <p class="text-slate-300 mb-6">Basierend auf den Live-Tabellen stehen diese Partien an. <br><strong>Mini-Finals: 7 Min Badm. + 3 Min Wechsel + 7 Min Squash.</strong></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-700 p-4 rounded-lg border border-slate-600">
+                    <h3 class="font-bold text-xl text-white mb-4 flex items-center gap-2 border-b border-slate-600 pb-2"><i data-lucide="swords" class="w-5 h-5 text-red-400"></i> Halbfinals</h3>
+                    <ul class="text-slate-200 space-y-4 text-sm md:text-base">
+                        <li>
+                            <div class="text-yellow-400 font-bold mb-1">🥇 Champions (Platz 1-4)</div>
+                            <span class="bg-slate-800 px-2 py-1 rounded">{{standings.A[0].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded">{{standings.B[0].name}}</span><br>
+                            <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.C[0].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.D[0].name}}</span>
+                        </li>
+                        <li>
+                            <div class="text-slate-300 font-bold mb-1">🥈 Silber (Platz 5-8)</div>
+                            <span class="bg-slate-800 px-2 py-1 rounded">{{standings.A[1].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded">{{standings.B[1].name}}</span><br>
+                            <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.C[1].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.D[1].name}}</span>
+                        </li>
+                        <li>
+                            <div class="text-orange-400 font-bold mb-1">🥉 Bronze (Platz 9-12)</div>
+                            <span class="bg-slate-800 px-2 py-1 rounded">{{standings.A[2].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded">{{standings.B[2].name}}</span><br>
+                            <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.C[2].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.D[2].name}}</span>
+                        </li>
+                        <li>
+                            <div class="text-green-400 font-bold mb-1">🎯 Fun (Platz 13-16)</div>
+                            <span class="bg-slate-800 px-2 py-1 rounded">{{standings.A[3].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded">{{standings.B[3].name}}</span><br>
+                            <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.C[3].name}}</span> vs <span class="bg-slate-800 px-2 py-1 rounded mt-1 inline-block">{{standings.D[3].name}}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-slate-700 p-4 rounded-lg border border-slate-600 flex flex-col justify-center items-center text-center">
+                    <i data-lucide="award" class="w-16 h-16 text-yellow-500 mb-4"></i>
+                    <h3 class="font-bold text-2xl text-white mb-2">Finals (12:40)</h3>
+                    <p class="text-slate-300 text-base max-w-sm">Die Sieger der Halbfinals spielen direkt im Anschluss um die endgültige Platzierung, die Verlierer um den Platz darunter.</p>
+                    <div class="mt-6 text-xl font-black text-yellow-400 animate-pulse">
+                        13:00 Uhr Siegerehrung!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // Team Datenbank
+                const teams = {
+                    'A1': 'Ang/Ame', 'A2': 'Ema/Tah', 'A3': 'Mir/Daf', 'A4': 'Kor/Mal',
+                    'B1': 'Bur/Naj', 'B2': 'Sal/Aur', 'B3': 'Kri/Kar', 'B4': 'Lehrkräfte',
+                    'C1': 'Jul/Ana', 'C2': 'Icl/Sai', 'C3': 'Max/Kar', 'C4': 'Mou/Hib',
+                    'D1': 'And/Iva', 'D2': 'Val/Vik', 'D3': 'Kad/Ali', 'D4': 'Anj/Jol'
+                };
+
+                const teamsByGroup = {
+                    'A': [{id: 'A1', name: teams['A1']}, {id: 'A2', name: teams['A2']}, {id: 'A3', name: teams['A3']}, {id: 'A4', name: teams['A4']}],
+                    'B': [{id: 'B1', name: teams['B1']}, {id: 'B2', name: teams['B2']}, {id: 'B3', name: teams['B3']}, {id: 'B4', name: teams['B4']}],
+                    'C': [{id: 'C1', name: teams['C1']}, {id: 'C2', name: teams['C2']}, {id: 'C3', name: teams['C3']}, {id: 'C4', name: teams['C4']}],
+                    'D': [{id: 'D1', name: teams['D1']}, {id: 'D2', name: teams['D2']}, {id: 'D3', name: teams['D3']}, {id: 'D4', name: teams['D4']}]
+                };
+
+                // Zentrales reaktives Datenobjekt für alle Spiele
+                // matchId: { b1: Badm Punkte Team1, b2: Badm Punkte Team 2, s1: Squash Punkte Team 1... }
+                const matchKeys = [
+                    'A1_A2', 'A3_A4', 'A1_A3', 'A2_A4', 'A1_A4', 'A2_A3',
+                    'B1_B2', 'B3_B4', 'B1_B3', 'B2_B4', 'B1_B4', 'B2_B3',
+                    'C1_C2', 'C3_C4', 'C1_C3', 'C2_C4', 'C1_C4', 'C2_C3',
+                    'D1_D2', 'D3_D4', 'D1_D3', 'D2_D4', 'D1_D4', 'D2_D3'
+                ];
+
+                const scores = ref({});
+                matchKeys.forEach(key => {
+                    scores.value[key] = { b1: null, b2: null, s1: null, s2: null };
+                });
+
+                // UI Datenstrukturen für einfache Schleifen im Template
+                const block1Badm = {
+                    r1: [{id: 'A1_A2', c:'Court 1', t1:'A1', t2:'A2'}, {id: 'A3_A4', c:'Court 2', t1:'A3', t2:'A4'}, {id: 'B1_B2', c:'Court 3', t1:'B1', t2:'B2'}, {id: 'B3_B4', c:'Court 4', t1:'B3', t2:'B4'}],
+                    r2: [{id: 'A1_A3', c:'Court 1', t1:'A1', t2:'A3'}, {id: 'A2_A4', c:'Court 2', t1:'A2', t2:'A4'}, {id: 'B1_B3', c:'Court 3', t1:'B1', t2:'B3'}, {id: 'B2_B4', c:'Court 4', t1:'B2', t2:'B4'}],
+                    r3: [{id: 'A1_A4', c:'Court 1', t1:'A1', t2:'A4'}, {id: 'A2_A3', c:'Court 2', t1:'A2', t2:'A3'}, {id: 'B1_B4', c:'Court 3', t1:'B1', t2:'B4'}, {id: 'B2_B3', c:'Court 4', t1:'B2', t2:'B3'}]
+                };
+
+                const block1Squash = {
+                    r1: [{id: 'C1_C2', c:'Court 1', t1:'C1', t2:'C2'}, {id: 'C3_C4', c:'Court 2', t1:'C3', t2:'C4'}, {id: 'D1_D2', c:'Court 3', t1:'D1', t2:'D2'}, {id: 'D3_D4', c:'Court 4', t1:'D3', t2:'D4'}],
+                    r2: [{id: 'C1_C3', c:'Court 1', t1:'C1', t2:'C3'}, {id: 'C2_C4', c:'Court 2', t1:'C2', t2:'C4'}, {id: 'D1_D3', c:'Court 3', t1:'D1', t2:'D3'}, {id: 'D2_D4', c:'Court 4', t1:'D2', t2:'D4'}],
+                    r3: [{id: 'C1_C4', c:'Court 1', t1:'C1', t2:'C4'}, {id: 'C2_C3', c:'Court 2', t1:'C2', t2:'C3'}, {id: 'D1_D4', c:'Court 3', t1:'D1', t2:'D4'}, {id: 'D2_D3', c:'Court 4', t1:'D2', t2:'D3'}]
+                };
+
+                const block2Badm = [
+                    { time: '11:15', pause: 'D3 (Kad/Ali) & D4 (Anj/Jol)', matches: [{id: 'C1_C2', c:'Court 1', t1:'C1', t2:'C2'}, {id: 'C3_C4', c:'Court 2', t1:'C3', t2:'C4'}, {id: 'D1_D2', c:'Court 3', t1:'D1', t2:'D2'}] },
+                    { time: '11:27', pause: 'D1 (And/Iva) & D2 (Val/Vik)', matches: [{id: 'C1_C3', c:'Court 1', t1:'C1', t2:'C3'}, {id: 'C2_C4', c:'Court 2', t1:'C2', t2:'C4'}, {id: 'D3_D4', c:'Court 3', t1:'D3', t2:'D4'}] },
+                    { time: '11:39', pause: 'C2 (Icl/Sai) & C3 (Max/Kar)', matches: [{id: 'C1_C4', c:'Court 1', t1:'C1', t2:'C4'}, {id: 'D1_D3', c:'Court 2', t1:'D1', t2:'D3'}, {id: 'D2_D4', c:'Court 3', t1:'D2', t2:'D4'}] },
+                    { time: '11:51', pause: 'C1 (Jul/Ana) & C4 (Mou/Hib)', matches: [{id: 'C2_C3', c:'Court 1', t1:'C2', t2:'C3'}, {id: 'D1_D4', c:'Court 2', t1:'D1', t2:'D4'}, {id: 'D2_D3', c:'Court 3', t1:'D2', t2:'D3'}] }
+                ];
+
+                // Berechnungs-Logik für Live-Tabellen
+                const standings = computed(() => {
+                    const groups = { A: [], B: [], C: [], D: [] };
+                    
+                    ['A', 'B', 'C', 'D'].forEach(g => {
+                        for(let i=1; i<=4; i++) {
+                            groups[g].push({ id: `${g}${i}`, name: teams[`${g}${i}`], points: 0, diff: 0, played: 0 });
+                        }
+                    });
+
+                    Object.keys(scores.value).forEach(matchId => {
+                        const s = scores.value[matchId];
+                        const t1 = matchId.substring(0,2);
+                        const t2 = matchId.substring(3,5);
+                        const g = t1.charAt(0);
+
+                        // Null Checks (Punkte zählen erst, wenn beide Felder eines Sports gefüllt sind)
+                        let b1 = typeof s.b1 === 'number' ? s.b1 : null;
+                        let b2 = typeof s.b2 === 'number' ? s.b2 : null;
+                        let sq1 = typeof s.s1 === 'number' ? s.s1 : null;
+                        let sq2 = typeof s.s2 === 'number' ? s.s2 : null;
+
+                        let t1_total = 0;
+                        let t2_total = 0;
+                        let hasData = false;
+
+                        // Addiere Badminton, falls vollständig
+                        if (b1 !== null && b2 !== null) { 
+                            t1_total += b1; t2_total += b2; 
+                            hasData = true; 
+                        }
+                        // Addiere Squash, falls vollständig
+                        if (sq1 !== null && sq2 !== null) { 
+                            t1_total += sq1; t2_total += sq2; 
+                            hasData = true; 
+                        }
+
+                        if (hasData) {
+                            const t1_obj = groups[g].find(t => t.id === t1);
+                            const t2_obj = groups[g].find(t => t.id === t2);
+
+                            // Differenz berechnen (wird laufend aktualisiert)
+                            t1_obj.diff += (t1_total - t2_total);
+                            t2_obj.diff += (t2_total - t1_total);
+
+                            // Tabellenpunkte erst vergeben, wenn BEIDE Sportarten komplett eingetragen sind
+                            if (b1 !== null && b2 !== null && sq1 !== null && sq2 !== null) {
+                                t1_obj.played++;
+                                t2_obj.played++;
+                                if (t1_total > t2_total) { t1_obj.points += 3; }
+                                else if (t2_total > t1_total) { t2_obj.points += 3; }
+                                else { t1_obj.points += 1; t2_obj.points += 1; }
+                            }
+                        }
+                    });
+
+                    // Sortieren nach 1. Punkten, 2. Tordifferenz
+                    ['A', 'B', 'C', 'D'].forEach(g => {
+                        groups[g].sort((a, b) => {
+                            if (b.points !== a.points) return b.points - a.points;
+                            return b.diff - a.diff;
+                        });
+                    });
+
+                    return groups;
+                });
+
+                onMounted(() => {
+                    lucide.createIcons();
+                });
+
+                return { 
+                    teams,
+                    teamsByGroup, scores, 
+                    block1Badm, block1Squash, block2Badm,
+                    standings
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
