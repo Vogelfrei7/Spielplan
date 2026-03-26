@@ -461,14 +461,16 @@
                         let t2_total = 0;
                         let hasData = false;
 
-                        // Addiere Badminton, falls vollständig
-                        if (b1 !== null && b2 !== null) { 
-                            t1_total += b1; t2_total += b2; 
+                        // Addiere Badminton, sobald ein Feld ausgefüllt ist
+                        if (b1 !== null || b2 !== null) { 
+                            t1_total += (b1 || 0); 
+                            t2_total += (b2 || 0); 
                             hasData = true; 
                         }
-                        // Addiere Squash, falls vollständig
-                        if (sq1 !== null && sq2 !== null) { 
-                            t1_total += sq1; t2_total += sq2; 
+                        // Addiere Squash, sobald ein Feld ausgefüllt ist
+                        if (sq1 !== null || sq2 !== null) { 
+                            t1_total += (sq1 || 0); 
+                            t2_total += (sq2 || 0); 
                             hasData = true; 
                         }
 
@@ -480,14 +482,12 @@
                             t1_obj.diff += (t1_total - t2_total);
                             t2_obj.diff += (t2_total - t1_total);
 
-                            // Tabellenpunkte erst vergeben, wenn BEIDE Sportarten komplett eingetragen sind
-                            if (b1 !== null && b2 !== null && sq1 !== null && sq2 !== null) {
-                                t1_obj.played++;
-                                t2_obj.played++;
-                                if (t1_total > t2_total) { t1_obj.points += 3; }
-                                else if (t2_total > t1_total) { t2_obj.points += 3; }
-                                else { t1_obj.points += 1; t2_obj.points += 1; }
-                            }
+                            // Tabellenpunkte & Spiele in Echtzeit vergeben
+                            t1_obj.played++;
+                            t2_obj.played++;
+                            if (t1_total > t2_total) { t1_obj.points += 3; }
+                            else if (t2_total > t1_total) { t2_obj.points += 3; }
+                            else { t1_obj.points += 1; t2_obj.points += 1; }
                         }
                     });
 
